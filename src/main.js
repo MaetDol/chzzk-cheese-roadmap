@@ -14,6 +14,8 @@
 // @grant        GM_addElement
 // ==/UserScript==
 
+// @ts-check
+
 const CACHE_KEY = '_#Cheese_summary_info_cache';
 
 main();
@@ -185,6 +187,36 @@ function appendResult(groupedChzInfos) {
   }, 200);
 }
 
+async function getChzsAfterDate(startYear, endYear, targetDateString) {
+  const chzs = [];
+
+  for (let year = startYear; year > endYear; year--) {
+    let page = 0;
+    let totalPages = 10;
+    while (page < totalPages) {
+      const { data, totalPages: MAX } = await getPurchaseHistory(page, year);
+      totalPages = MAX;
+      page += 1;
+
+      const cachedHistoryIndex = data.findIndex(
+        ({ purchaseDate }) =>
+          new Date(purchaseDate).getTime() >=
+          new Date(targetDateString).getTime()
+      );
+
+      if (cachedHistoryIndex !== -1) {
+        chzs.push(...data.slice(0, cachedHistoryIndex));
+        return chzs;
+      }
+
+      chzs.push(...data);
+      await delay(100);
+    }
+  }
+
+  return chzs;
+}
+
 /**
  *
  * @returns {Promise<StreamerSummary[]>}
@@ -193,8 +225,16 @@ async function getGroupedAllChz() {
   const START_YEAR = 2023;
   const TODAY_YEAR = Number(new Date().getFullYear());
   const chzs = [];
+
+  const cachedInfoDate = getCachedInfo()?.lastChzDate;
+  if (cachedInfoDate) {
+    chzs.push(
+      ...(await getChzsAfterDate(TODAY_YEAR, START_YEAR, cachedInfoDate))
+    );
+  } else {
   for (let year = TODAY_YEAR; year > START_YEAR; year--) {
     chzs.push(...(await getChz(year, 0, true)));
+    }
   }
 
   const groupedChzInfos = chzs.reduce((map, chz) => {
