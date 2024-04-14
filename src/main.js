@@ -50,6 +50,16 @@ async function getChz(year, pg, getAll = false) {
  */
 
 /**
+ * @typedef {{
+ * id: string,
+ * name: string,
+ * purchases: PurchaseHistory[],
+ * sum: number,
+ * thumbnail: string,
+ * }} StreamerSummary
+ */
+
+/**
  *
  * @param {number} pg
  * @param {number} year
@@ -104,6 +114,10 @@ async function shouldUseCachedInfo() {
   return cachedInfo.lastChzDate === lastChzDate;
 }
 
+/**
+ *
+ * @returns {{ lastChzDate: string, info: StreamerSummary[] } | null}
+ */
 function getCachedInfo() {
   return JSON.parse(localStorage.getItem(CACHE_KEY) ?? String(null));
 }
@@ -171,6 +185,10 @@ function appendResult(groupedChzInfos) {
   }, 200);
 }
 
+/**
+ *
+ * @returns {Promise<StreamerSummary[]>}
+ */
 async function getGroupedAllChz() {
   const START_YEAR = 2023;
   const TODAY_YEAR = Number(new Date().getFullYear());
