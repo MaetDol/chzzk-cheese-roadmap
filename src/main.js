@@ -190,7 +190,8 @@ function appendResult(groupedChzInfos) {
 async function getChzsAfterDate(startYear, endYear, targetDateString) {
   const chzs = [];
 
-  for (let year = startYear; year > endYear; year--) {
+  // totalPages 가 모든 해의 페이지일까? 해당 년도의 페이지일까?
+  for (let year = startYear; year >= endYear; year--) {
     let page = 0;
     let totalPages = 10;
     while (page < totalPages) {
@@ -200,7 +201,7 @@ async function getChzsAfterDate(startYear, endYear, targetDateString) {
 
       const cachedHistoryIndex = data.findIndex(
         ({ purchaseDate }) =>
-          new Date(purchaseDate).getTime() >=
+          new Date(purchaseDate).getTime() <=
           new Date(targetDateString).getTime()
       );
 
