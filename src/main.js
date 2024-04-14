@@ -91,9 +91,44 @@ async function main() {
     return;
   }
 
-  const groupedChzInfos = await getGroupedAllChz();
+  let groupedChzInfos = await getGroupedAllChz();
+  const cachedInfo = getCachedInfo()?.info;
+  if (cachedInfo) {
+    groupedChzInfos = mergeChzGroups(cachedInfo, groupedChzInfos);
+  }
   setCachedInfo(groupedChzInfos);
   appendResult(groupedChzInfos);
+}
+
+/**
+ * @description group1 과 group2 의 값을 합칩니다. 합칠 수 없는 값의 경우, group2 로 덮어씌워집니다
+ * @param {StreamerSummary[]} group1
+ * @param {StreamerSummary[]} group2
+ */
+function mergeChzGroups(group1, group2) {
+  /** @type {StreamerSummary[]} */
+  const newGroup = [];
+
+  [group1, group2].forEach((group) =>
+    group.forEach((summary) => {
+      const mergedSummary = newGroup.find((s) => s.id === summary.id);
+      if (mergedSummary) {
+        mergedSummary.sum += summary.sum;
+        mergedSummary.thumbnail = summary.thumbnail;
+        mergedSummary.name = summary.name;
+        mergedSummary.purchases = [
+          ...summary.purchases,
+          ...mergedSummary.purchases,
+        ];
+      } else {
+        newGroup.push({
+          ...summary,
+        });
+      }
+    })
+  );
+
+  return newGroup;
 }
 
 async function setCachedInfo(groupedChzInfos) {
@@ -233,8 +268,8 @@ async function getGroupedAllChz() {
       ...(await getChzsAfterDate(TODAY_YEAR, START_YEAR, cachedInfoDate))
     );
   } else {
-  for (let year = TODAY_YEAR; year > START_YEAR; year--) {
-    chzs.push(...(await getChz(year, 0, true)));
+    for (let year = TODAY_YEAR; year > START_YEAR; year--) {
+      chzs.push(...(await getChz(year, 0, true)));
     }
   }
 
