@@ -17,8 +17,13 @@
 // @ts-check
 
 const CACHE_KEY = '_#Cheese_summary_info_cache';
+const LOG_PREFIX = '[CHZ-ROADMAP]';
 
 main();
+
+function log(...args) {
+  console.log(LOG_PREFIX, ...args);
+}
 
 async function delay(ms) {
   return new Promise((rs) => setTimeout(rs, ms));
@@ -84,7 +89,7 @@ async function getPurchaseHistory(pg, year) {
 }
 
 async function main() {
-  console.log('"치즈로드맵" 실행 중..');
+  log(`"치즈로드맵" 실행 중..`);
   const isSameWithCache = await shouldUseCachedInfo();
   if (isSameWithCache) {
     appendResult(getCachedInfo());
@@ -94,6 +99,7 @@ async function main() {
   let groupedChzInfos = await getGroupedAllChz();
   const cachedInfo = getCachedInfo()?.info;
   if (cachedInfo) {
+    log(`캐싱된 정보 확인, 캐싱된 마지막 치즈: ${cachedInfo}`);
     groupedChzInfos = mergeChzGroups(cachedInfo, groupedChzInfos);
   }
   setCachedInfo(groupedChzInfos);
