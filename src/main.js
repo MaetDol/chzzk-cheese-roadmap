@@ -23,6 +23,18 @@ async function delay(ms) {
 }
 
 async function getChz(year, pg, getAll = false) {
+
+  const { page, totalPages, data } = await getPurchaseHistory(pg, year);
+  const hasMorePages = page + 1 < totalPages;
+  let nextPurchaseInfoPages = [];
+  if (getAll && hasMorePages) {
+    await delay(100);
+    nextPurchaseInfoPages = await getChz(year, page + 1, getAll);
+  }
+  return data.concat(nextPurchaseInfoPages);
+}
+
+async function getPurchaseHistory(pg, year) {
   const res = await fetch(
     `https://api.chzzk.naver.com/commercial/v1/product/purchase/history?page=${pg}&size=10&searchYear=${year}`,
     {
@@ -35,15 +47,7 @@ async function getChz(year, pg, getAll = false) {
     }
   );
   const json = await res.json();
-
-  const { page, totalPages, data } = json.content;
-  const hasMorePages = page + 1 < totalPages;
-  let nextPurchaseInfoPages = [];
-  if (getAll && hasMorePages) {
-    await delay(100);
-    nextPurchaseInfoPages = await getChz(year, page + 1, getAll);
-  }
-  return data.concat(nextPurchaseInfoPages);
+  return json.content;
 }
 
 async function main() {
