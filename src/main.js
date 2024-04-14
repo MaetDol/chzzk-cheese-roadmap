@@ -14,6 +14,10 @@
 // @grant        GM_addElement
 // ==/UserScript==
 
+const CACHE_KEY = '_#Cheese_summary_info_cache';
+
+main();
+
 async function delay(ms) {
   return new Promise((rs) => setTimeout(rs, ms));
 }
@@ -36,40 +40,68 @@ async function getChz(year, pg, getAll = false) {
   const hasMorePages = page + 1 < totalPages;
   let nextPurchaseInfoPages = [];
   if (getAll && hasMorePages) {
-    await delay(30);
+    await delay(100);
     nextPurchaseInfoPages = await getChz(year, page + 1, getAll);
   }
   return data.concat(nextPurchaseInfoPages);
 }
 
-const CACHE_KEY = '_#Cheese_summary_info_cache';
 async function main() {
   console.log('"치즈로드맵" 실행 중..');
-  const cachedInfo = JSON.parse(
-    localStorage.getItem(CACHE_KEY) ?? String(null)
-  );
-
-  const lastChzInfo = await getChz(new Date().getFullYear(), 0);
-  const lastChzDate = lastChzInfo[0]?.purchaseDate ?? null;
-  if (!lastChzDate) return;
-
-  let groupedChzInfos = cachedInfo?.info;
-  if (cachedInfo?.lastChzDate !== lastChzDate) {
-    groupedChzInfos = await getGroupedAllChz();
+  const isSameWithCache = await shouldUseCachedInfo();
+  if (isSameWithCache) {
+    appendResult(getCachedInfo());
+    return;
   }
 
+  const groupedChzInfos = await getGroupedAllChz();
+  setCachedInfo(groupedChzInfos);
+  appendResult(groupedChzInfos);
+}
+
+async function setCachedInfo(groupedChzInfos) {
   localStorage.setItem(
     CACHE_KEY,
     JSON.stringify({
       info: groupedChzInfos,
-      lastChzDate,
+      lastChzDate: getLastCheeseDateFromGroup(groupedChzInfos),
     })
   );
-
-  appendResult(groupedChzInfos);
 }
 
-main();
+async function shouldUseCachedInfo() {
+  const cachedInfo = getCachedInfo();
+  if (!cachedInfo) return false;
+
+  const lastChzDate = await getLastCheeseDate();
+  if (!lastChzDate) return false;
+
+  return cachedInfo.lastChzDate === lastChzDate;
+}
+
+function getCachedInfo() {
+  return JSON.parse(localStorage.getItem(CACHE_KEY) ?? String(null));
+}
+
+async function getLastCheeseDate() {
+  // 올해 후원한 내역이 없으면 어떻게 될까?
+  const lastChzInfo = await getChz(new Date().getFullYear(), 0);
+  const lastChzDate = lastChzInfo[0]?.purchaseDate ?? null;
+  return lastChzDate;
+}
+
+function getLastCheeseDateFromGroup(group) {
+  let lastDate = new Date(0);
+  group.forEach(({ purchases }) => {
+    purchases.forEach(({ purchaseDate }) => {
+      if (new Date(purchaseDate) > lastDate) {
+        lastDate = purchaseDate;
+      }
+    });
+  });
+
+  return lastDate;
+}
 
 function appendResult(groupedChzInfos) {
   const div = document.createElement('div');
@@ -91,7 +123,6 @@ function appendResult(groupedChzInfos) {
   resetButton.style.padding = '4px';
   resetButton.style.borderRadius = '4px';
   const clearAll = async () => {
-    isVisible = false;
     resetButton.remove();
     div.remove();
     await main();
