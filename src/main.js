@@ -23,7 +23,6 @@ async function delay(ms) {
 }
 
 async function getChz(year, pg, getAll = false) {
-
   const { page, totalPages, data } = await getPurchaseHistory(pg, year);
   const hasMorePages = page + 1 < totalPages;
   let nextPurchaseInfoPages = [];
@@ -34,6 +33,28 @@ async function getChz(year, pg, getAll = false) {
   return data.concat(nextPurchaseInfoPages);
 }
 
+/**
+ * @typedef {{
+ * channelId: string,
+ * channelImageUrl: string,
+ * channelName: string,
+ * donationText: string,
+ * donationType: 'CHAT' | 'VIDEO',
+ * donationVideoType: null | string,
+ * donationVideoUrl: string,
+ * extras: unknown,
+ * payAmount: number,
+ * purchaseDate: string,
+ * useSpeech: boolean
+ * }} PurchaseHistory
+ */
+
+/**
+ *
+ * @param {number} pg
+ * @param {number} year
+ * @returns {Promise<{ page: number, size: number, totalCount: number, totalPages: number, data: PurchaseHistory[] }>}
+ */
 async function getPurchaseHistory(pg, year) {
   const res = await fetch(
     `https://api.chzzk.naver.com/commercial/v1/product/purchase/history?page=${pg}&size=10&searchYear=${year}`,
