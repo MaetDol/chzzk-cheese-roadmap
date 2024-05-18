@@ -21,18 +21,22 @@ const LOG_PREFIX = '[CHZ-ROADMAP]';
 
 main();
 
-function log(...args) {
+function log(...args: unknown[]) {
   console.log(LOG_PREFIX, ...args);
 }
 
-async function delay(ms) {
+async function delay(ms: number) {
   return new Promise((rs) => setTimeout(rs, ms));
 }
 
-async function getChz(year, pg, getAll = false) {
+async function getChz(
+  year: number,
+  pg: number,
+  getAll: boolean = false
+): Promise<PurchaseHistory[]> {
   const { page, totalPages, data } = await getPurchaseHistory(pg, year);
   const hasMorePages = page + 1 < totalPages;
-  let nextPurchaseInfoPages = [];
+  let nextPurchaseInfoPages: PurchaseHistory[] = [];
   if (getAll && hasMorePages) {
     await delay(100);
     nextPurchaseInfoPages = await getChz(year, page + 1, getAll);
@@ -40,39 +44,38 @@ async function getChz(year, pg, getAll = false) {
   return data.concat(nextPurchaseInfoPages);
 }
 
-/**
- * @typedef {{
- * channelId: string,
- * channelImageUrl: string,
- * channelName: string,
- * donationText: string,
- * donationType: 'CHAT' | 'VIDEO',
- * donationVideoType: null | string,
- * donationVideoUrl: string,
- * extras: unknown,
- * payAmount: number,
- * purchaseDate: string,
- * useSpeech: boolean
- * }} PurchaseHistory
- */
+type PurchaseHistory = {
+  channelId: string;
+  channelImageUrl: string;
+  channelName: string;
+  donationText: string;
+  donationType: 'CHAT' | 'VIDEO';
+  donationVideoType: null | string;
+  donationVideoUrl: string;
+  extras: unknown;
+  payAmount: number;
+  purchaseDate: string;
+  useSpeech: boolean;
+};
 
-/**
- * @typedef {{
- * id: string,
- * name: string,
- * purchases: PurchaseHistory[],
- * sum: number,
- * thumbnail: string,
- * }} StreamerSummary
- */
+type StreamerSummary = {
+  id: string;
+  name: string;
+  purchases: PurchaseHistory[];
+  sum: number;
+  thumbnail: string;
+};
 
-/**
- *
- * @param {number} pg
- * @param {number} year
- * @returns {Promise<{ page: number, size: number, totalCount: number, totalPages: number, data: PurchaseHistory[] }>}
- */
-async function getPurchaseHistory(pg, year) {
+async function getPurchaseHistory(
+  pg: number,
+  year: number
+): Promise<{
+  page: number;
+  size: number;
+  totalCount: number;
+  totalPages: number;
+  data: PurchaseHistory[];
+}> {
   const res = await fetch(
     `https://api.chzzk.naver.com/commercial/v1/product/purchase/history?page=${pg}&size=10&searchYear=${year}`,
     {
@@ -91,8 +94,9 @@ async function getPurchaseHistory(pg, year) {
 async function main() {
   log(`"치즈로드맵" 실행 중..`);
   const isSameWithCache = await shouldUseCachedInfo();
-  if (isSameWithCache) {
-    appendResult(getCachedInfo());
+  const cache = getCachedInfo();
+  if (isSameWithCache && cache) {
+    appendResult(cache.info);
     return;
   }
 
@@ -106,14 +110,8 @@ async function main() {
   appendResult(groupedChzInfos);
 }
 
-/**
- * @description group1 과 group2 의 값을 합칩니다. 합칠 수 없는 값의 경우, group2 로 덮어씌워집니다
- * @param {StreamerSummary[]} group1
- * @param {StreamerSummary[]} group2
- */
-function mergeChzGroups(group1, group2) {
-  /** @type {StreamerSummary[]} */
-  const newGroup = [];
+function mergeChzGroups(group1: StreamerSummary[], group2: StreamerSummary[]) {
+  const newGroup: StreamerSummary[] = [];
 
   [group1, group2].forEach((group) =>
     group.forEach((summary) => {
@@ -137,7 +135,12 @@ function mergeChzGroups(group1, group2) {
   return newGroup;
 }
 
-async function setCachedInfo(groupedChzInfos) {
+type CacheType = {
+  info: StreamerSummary[];
+  lastChzDate: string;
+};
+
+async function setCachedInfo(groupedChzInfos: StreamerSummary[]) {
   localStorage.setItem(
     CACHE_KEY,
     JSON.stringify({
@@ -157,11 +160,7 @@ async function shouldUseCachedInfo() {
   return cachedInfo.lastChzDate === lastChzDate;
 }
 
-/**
- *
- * @returns {{ lastChzDate: string, info: StreamerSummary[] } | null}
- */
-function getCachedInfo() {
+function getCachedInfo(): CacheType | null {
   return JSON.parse(localStorage.getItem(CACHE_KEY) ?? String(null));
 }
 
@@ -172,12 +171,12 @@ async function getLastCheeseDate() {
   return lastChzDate;
 }
 
-function getLastCheeseDateFromGroup(group) {
+function getLastCheeseDateFromGroup(group: StreamerSummary[]) {
   let lastDate = new Date(0);
   group.forEach(({ purchases }) => {
     purchases.forEach(({ purchaseDate }) => {
       if (new Date(purchaseDate) > lastDate) {
-        lastDate = purchaseDate;
+        lastDate = new Date(purchaseDate);
       }
     });
   });
@@ -185,7 +184,7 @@ function getLastCheeseDateFromGroup(group) {
   return lastDate;
 }
 
-function appendResult(groupedChzInfos) {
+function appendResult(groupedChzInfos: StreamerSummary[]) {
   const div = document.createElement('div');
   div.style.display = 'flex';
   div.style.margin = '0 0 16px 0';
@@ -228,7 +227,11 @@ function appendResult(groupedChzInfos) {
   }, 200);
 }
 
-async function getChzsAfterDate(startYear, endYear, targetDateString) {
+async function getChzsAfterDate(
+  startYear: number,
+  endYear: number,
+  targetDateString: string
+) {
   const chzs = [];
 
   // totalPages 가 모든 해의 페이지일까? 해당 년도의 페이지일까?
@@ -259,14 +262,10 @@ async function getChzsAfterDate(startYear, endYear, targetDateString) {
   return chzs;
 }
 
-/**
- *
- * @returns {Promise<StreamerSummary[]>}
- */
-async function getGroupedAllChz() {
+async function getGroupedAllChz(): Promise<StreamerSummary[]> {
   const START_YEAR = 2023;
   const TODAY_YEAR = Number(new Date().getFullYear());
-  const chzs = [];
+  const chzs: PurchaseHistory[] = [];
 
   const cachedInfoDate = getCachedInfo()?.lastChzDate;
   if (cachedInfoDate) {
@@ -279,7 +278,7 @@ async function getGroupedAllChz() {
     }
   }
 
-  const groupedChzInfos = chzs.reduce((map, chz) => {
+  const groupedChzInfos = chzs.reduce<StreamerSummary[]>((map, chz) => {
     const streamerIdx = map.findIndex((s) => s.id === chz.channelId);
     let streamer = map[streamerIdx];
     if (streamerIdx === -1) {
@@ -301,7 +300,7 @@ async function getGroupedAllChz() {
   return groupedChzInfos;
 }
 
-function newStreamer(thumbnail, name, payAmount) {
+function newStreamer(thumbnail: string, name: string, payAmount: string) {
   const parser = new DOMParser();
   const containerRaw = `<div
     style="
@@ -320,7 +319,7 @@ function newStreamer(thumbnail, name, payAmount) {
   return container;
 }
 
-function newThumbnail(thumbnail) {
+function newThumbnail(thumbnail: string) {
   return `<div
       style='
         background: #ebedf3 no-repeat 50% / cover;
@@ -332,7 +331,7 @@ function newThumbnail(thumbnail) {
     '></div>`;
 }
 
-function newTextInfo(name, payAmount) {
+function newTextInfo(name: string, payAmount: string) {
   return `
     <div
       style="
