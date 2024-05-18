@@ -103,7 +103,14 @@ async function main() {
   let groupedChzInfos = await getGroupedAllChz();
   const cachedInfo = getCachedInfo()?.info;
   if (cachedInfo) {
-    log(`캐싱된 정보 확인, 캐싱된 마지막 치즈: ${cachedInfo}`);
+    const lastChz = getLastCheeseFromGroup(cachedInfo);
+    log(
+      `캐싱된 정보 확인, 캐싱된 마지막 치즈: ${JSON.stringify(
+        lastChz,
+        null,
+        4
+      )}`
+    );
     groupedChzInfos = mergeChzGroups(cachedInfo, groupedChzInfos);
   }
   setCachedInfo(groupedChzInfos);
@@ -182,6 +189,27 @@ function getLastCheeseDateFromGroup(group: StreamerSummary[]) {
   });
 
   return lastDate;
+}
+
+function getLastCheeseFromGroup(
+  group: StreamerSummary[]
+): PurchaseHistory | null {
+  let lastChz: PurchaseHistory | null = null;
+
+  group.forEach(({ purchases }) => {
+    purchases.forEach((chz) => {
+      if (!lastChz) {
+        lastChz = chz;
+        return;
+      }
+
+      if (new Date(chz.purchaseDate) > new Date(lastChz.purchaseDate)) {
+        lastChz = chz;
+      }
+    });
+  });
+
+  return lastChz;
 }
 
 function appendResult(groupedChzInfos: StreamerSummary[]) {
