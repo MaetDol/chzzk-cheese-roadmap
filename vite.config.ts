@@ -7,6 +7,7 @@ export default defineConfig(async () => ({
       entry: 'src/main.ts',
       name: 'index',
       formats: ['es'] as LibraryFormats[],
+      fileName: 'cheese-roadmap.user',
     },
   },
   esbuild: {
