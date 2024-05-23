@@ -1,5 +1,8 @@
 import { getChz, getPurchaseHistory } from '@/api';
+import { drawBlocks } from '@/components/CheeseHeatmap.ts';
+import Kmeans from '@/lib/k-means-js';
 import { PurchaseHistory, StreamerSummary } from '@/types';
+import { getYearMonthDateString } from '@/utils/date-to-year-month-date';
 import { delay } from '@/utils/delay';
 
 const CACHE_KEY = '_#Cheese_summary_info_cache';
@@ -135,7 +138,6 @@ function getLastCheeseFromGroup(
 function appendResult(groupedChzInfos: StreamerSummary[]) {
   const div = document.createElement('div');
   div.style.display = 'flex';
-  div.style.margin = '0 0 16px 0';
   div.style.padding = '16px 0';
   div.style.overflowX = 'auto';
   div.style.alignItems = 'center';
@@ -146,14 +148,16 @@ function appendResult(groupedChzInfos: StreamerSummary[]) {
       div.append(newStreamer(thumbnail, name, sum.toLocaleString()));
     });
 
+  const container = document.createElement('div');
+  container.style.margin = '72px 0';
+
   const resetButton = document.createElement('button');
   resetButton.innerText = '강제 새로고침';
   resetButton.style.background = '#eee';
   resetButton.style.padding = '4px';
   resetButton.style.borderRadius = '4px';
   const clearAll = async () => {
-    resetButton.remove();
-    div.remove();
+    container.remove();
     await main();
   };
   resetButton.onclick = () => {
@@ -169,8 +173,42 @@ function appendResult(groupedChzInfos: StreamerSummary[]) {
     const targetElem = document.querySelector(`[class^=header_container__]`);
     if (!targetElem) return;
 
-    targetElem.after(div);
-    targetElem.after(resetButton);
+    container.append(resetButton);
+    container.append(div);
+
+    const dateWithPrice = groupedChzInfos
+      .flatMap(({ purchases }) => purchases)
+      .reduce((map, history) => {
+        const key = getYearMonthDateString(
+          new Date(history.purchaseDate.replace(' ', 'T') + '+09:00')
+        );
+        map[key] = (map[key] ?? 0) + history.payAmount;
+
+        return map;
+      }, {} as Record<string, number>);
+
+    const kmeans = new Kmeans({ k: 4, datas: Object.values(dateWithPrice) });
+    kmeans.multipleFit(500);
+
+    const dateWithLevel: Record<string, { price: number; level: number }> = {};
+    if (kmeans.classifications) {
+      const sortedCls = (kmeans.classifications as number[][])
+        .map((prices) => prices.sort((a, b) => a - b))
+        .sort((a, b) => a[0] - b[0]);
+
+      for (const date in dateWithPrice) {
+        const price = dateWithPrice[date];
+
+        dateWithLevel[date] = {
+          price,
+          level: sortedCls.findIndex((cluster) => cluster.includes(price)) + 1,
+        };
+      }
+    }
+
+    container.append(drawBlocks(dateWithLevel));
+
+    targetElem.after(container);
     clearInterval(intervalId);
   }, 200);
 }
