@@ -1,6 +1,12 @@
-import { LibraryFormats, defineConfig } from 'vite';
+import { fileURLToPath, URL } from 'node:url';
+import { defineConfig, LibraryFormats } from 'vite';
 
 export default defineConfig(async () => ({
+  resolve: {
+    alias: {
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
+    },
+  },
   build: {
     minify: false,
     lib: {
