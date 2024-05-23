@@ -1,0 +1,3 @@
+[submodule "src/lib/k-means-js"]
+	path = src/lib/k-means-js
+	url = git@github.com:MaetDol/k-means-js.git

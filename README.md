@@ -19,3 +19,5 @@
 ## 설치 및 사용법
 
 [Tampermonkey](https://chromewebstore.google.com/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo) 확장프로그램이 필요해요.
+
+스크립트 다운로드: [\[RAW\]](https://github.com/MaetDol/chzzk-cheese-roadmap/raw/release/cheese-roadmap.user.js)

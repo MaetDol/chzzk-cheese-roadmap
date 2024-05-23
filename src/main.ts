@@ -1,3 +1,8 @@
+import { getChz, getPurchaseHistory } from '@/api';
+import { heatmap } from '@/components/Heatmap';
+import { PurchaseHistory, StreamerSummary } from '@/types';
+import { delay } from '@/utils/delay';
+
 const CACHE_KEY = '_#Cheese_summary_info_cache';
 const LOG_PREFIX = '[CHZ-ROADMAP]';
 
@@ -5,72 +10,6 @@ main();
 
 function log(...args: unknown[]) {
   console.log(LOG_PREFIX, ...args);
-}
-
-async function delay(ms: number) {
-  return new Promise((rs) => setTimeout(rs, ms));
-}
-
-async function getChz(
-  year: number,
-  pg: number,
-  getAll: boolean = false
-): Promise<PurchaseHistory[]> {
-  const { page, totalPages, data } = await getPurchaseHistory(pg, year);
-  const hasMorePages = page + 1 < totalPages;
-  let nextPurchaseInfoPages: PurchaseHistory[] = [];
-  if (getAll && hasMorePages) {
-    await delay(100);
-    nextPurchaseInfoPages = await getChz(year, page + 1, getAll);
-  }
-  return data.concat(nextPurchaseInfoPages);
-}
-
-type PurchaseHistory = {
-  channelId: string;
-  channelImageUrl: string;
-  channelName: string;
-  donationText: string;
-  donationType: 'CHAT' | 'VIDEO';
-  donationVideoType: null | string;
-  donationVideoUrl: string;
-  extras: unknown;
-  payAmount: number;
-  purchaseDate: string;
-  useSpeech: boolean;
-};
-
-type StreamerSummary = {
-  id: string;
-  name: string;
-  purchases: PurchaseHistory[];
-  sum: number;
-  thumbnail: string;
-};
-
-async function getPurchaseHistory(
-  pg: number,
-  year: number
-): Promise<{
-  page: number;
-  size: number;
-  totalCount: number;
-  totalPages: number;
-  data: PurchaseHistory[];
-}> {
-  const res = await fetch(
-    `https://api.chzzk.naver.com/commercial/v1/product/purchase/history?page=${pg}&size=10&searchYear=${year}`,
-    {
-      headers: {
-        accept: 'application/json, text/plain, */*',
-        'accept-language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7,fr;q=0.6',
-      },
-      method: 'GET',
-      credentials: 'include',
-    }
-  );
-  const json = await res.json();
-  return json.content;
 }
 
 async function main() {
@@ -197,7 +136,6 @@ function getLastCheeseFromGroup(
 function appendResult(groupedChzInfos: StreamerSummary[]) {
   const div = document.createElement('div');
   div.style.display = 'flex';
-  div.style.margin = '0 0 16px 0';
   div.style.padding = '16px 0';
   div.style.overflowX = 'auto';
   div.style.alignItems = 'center';
@@ -208,14 +146,16 @@ function appendResult(groupedChzInfos: StreamerSummary[]) {
       div.append(newStreamer(thumbnail, name, sum.toLocaleString()));
     });
 
+  const container = document.createElement('div');
+  container.style.margin = '72px 0';
+
   const resetButton = document.createElement('button');
   resetButton.innerText = '강제 새로고침';
   resetButton.style.background = '#eee';
   resetButton.style.padding = '4px';
   resetButton.style.borderRadius = '4px';
   const clearAll = async () => {
-    resetButton.remove();
-    div.remove();
+    container.remove();
     await main();
   };
   resetButton.onclick = () => {
@@ -231,8 +171,12 @@ function appendResult(groupedChzInfos: StreamerSummary[]) {
     const targetElem = document.querySelector(`[class^=header_container__]`);
     if (!targetElem) return;
 
-    targetElem.after(div);
-    targetElem.after(resetButton);
+    container.append(resetButton);
+    container.append(div);
+
+    container.append(heatmap(groupedChzInfos));
+
+    targetElem.after(container);
     clearInterval(intervalId);
   }, 200);
 }
