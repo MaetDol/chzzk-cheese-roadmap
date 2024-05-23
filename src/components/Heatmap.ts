@@ -95,9 +95,9 @@ function drawBlocks(
 
       --level-0: #ebedf0;
       --level-1: #fff056;
-      --level-2: #ffe246;
-      --level-3: #fecf3e;
-      --level-4: #fdb833;
+      --level-2: #ffc300;
+      --level-3: #ffa200;
+      --level-4: #ff8800;
     ">
     </div>
     `,
