@@ -1,5 +1,5 @@
 import { getChz, getPurchaseHistory } from '@/api';
-import { heatmap } from '@/components/CheeseHeatmap.ts';
+import { heatmap } from '@/components/Heatmap';
 import { PurchaseHistory, StreamerSummary } from '@/types';
 import { delay } from '@/utils/delay';
 
