@@ -9,6 +9,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Download submodules
+        run: |
+          git submodule update --init --recursive
+
       - name: npm install, build
         run: |
           npm clean-install
