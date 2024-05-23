@@ -1,8 +1,6 @@
 import { getChz, getPurchaseHistory } from '@/api';
-import { drawBlocks } from '@/components/CheeseHeatmap.ts';
-import Kmeans from '@/lib/k-means-js';
+import { heatmap } from '@/components/CheeseHeatmap.ts';
 import { PurchaseHistory, StreamerSummary } from '@/types';
-import { getYearMonthDateString } from '@/utils/date-to-year-month-date';
 import { delay } from '@/utils/delay';
 
 const CACHE_KEY = '_#Cheese_summary_info_cache';
@@ -176,37 +174,7 @@ function appendResult(groupedChzInfos: StreamerSummary[]) {
     container.append(resetButton);
     container.append(div);
 
-    const dateWithPrice = groupedChzInfos
-      .flatMap(({ purchases }) => purchases)
-      .reduce((map, history) => {
-        const key = getYearMonthDateString(
-          new Date(history.purchaseDate.replace(' ', 'T') + '+09:00')
-        );
-        map[key] = (map[key] ?? 0) + history.payAmount;
-
-        return map;
-      }, {} as Record<string, number>);
-
-    const kmeans = new Kmeans({ k: 4, datas: Object.values(dateWithPrice) });
-    kmeans.multipleFit(500);
-
-    const dateWithLevel: Record<string, { price: number; level: number }> = {};
-    if (kmeans.classifications) {
-      const sortedCls = (kmeans.classifications as number[][])
-        .map((prices) => prices.sort((a, b) => a - b))
-        .sort((a, b) => a[0] - b[0]);
-
-      for (const date in dateWithPrice) {
-        const price = dateWithPrice[date];
-
-        dateWithLevel[date] = {
-          price,
-          level: sortedCls.findIndex((cluster) => cluster.includes(price)) + 1,
-        };
-      }
-    }
-
-    container.append(drawBlocks(dateWithLevel));
+    container.append(heatmap(groupedChzInfos));
 
     targetElem.after(container);
     clearInterval(intervalId);

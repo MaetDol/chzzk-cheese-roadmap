@@ -1,3 +1,6 @@
+import { Heading } from '@/components/Heading';
+import Kmeans from '@/lib/k-means-js';
+import { StreamerSummary } from '@/types';
 import { getYearMonthDateString } from '@/utils/date-to-year-month-date';
 
 function block(level: number, price: number, date: string) {
@@ -65,7 +68,7 @@ function getTooltip(date: string, price: number) {
   return tooltip;
 }
 
-export function drawBlocks(
+function drawBlocks(
   dateWithLevel: Record<string, { price: number; level: number }>
 ) {
   const blocks = [];
@@ -83,7 +86,7 @@ export function drawBlocks(
   const container = parser.parseFromString(
     `
     <div style="
-      margin-top: 40px;
+      margin-top: 8px;
       display: grid;
       grid-template-rows: repeat(7, 10px);
       grid-auto-flow: column;
@@ -103,4 +106,43 @@ export function drawBlocks(
 
   blocks.forEach((b) => container.append(b));
   return container;
+}
+
+export function heatmap(groupedChzInfos: StreamerSummary[]) {
+  const dateWithPrice = groupedChzInfos
+    .flatMap(({ purchases }) => purchases)
+    .reduce((map, history) => {
+      const key = getYearMonthDateString(
+        new Date(history.purchaseDate.replace(' ', 'T') + '+09:00')
+      );
+      map[key] = (map[key] ?? 0) + history.payAmount;
+
+      return map;
+    }, {} as Record<string, number>);
+
+  const kmeans = new Kmeans({ k: 4, datas: Object.values(dateWithPrice) });
+  kmeans.multipleFit(500);
+
+  const dateWithLevel: Record<string, { price: number; level: number }> = {};
+  if (kmeans.classifications) {
+    const sortedCls = (kmeans.classifications as number[][])
+      .map((prices) => prices.sort((a, b) => a - b))
+      .sort((a, b) => a[0] - b[0]);
+
+    for (const date in dateWithPrice) {
+      const price = dateWithPrice[date];
+
+      dateWithLevel[date] = {
+        price,
+        level: sortedCls.findIndex((cluster) => cluster.includes(price)) + 1,
+      };
+    }
+  }
+
+  const div = document.createElement('div');
+  div.style.marginTop = '16px ';
+  div.append(Heading(2, '치즈 히트맵'));
+  div.append(drawBlocks(dateWithLevel));
+
+  return div;
 }
