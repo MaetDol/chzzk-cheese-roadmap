@@ -2,8 +2,9 @@ import { Heading } from '@/components/Heading';
 import Kmeans from '@/lib/k-means-js';
 import { StreamerSummary } from '@/types';
 import { getYearMonthDateString } from '@/utils/date-to-year-month-date';
+import { parseHtml } from '@/utils/domParser';
 
-function block(level: number, price: number, date: string) {
+function block(level: number, tooltip?: HTMLElement) {
   const parser = new DOMParser();
   const block = parser.parseFromString(
     `<div style="      
@@ -15,31 +16,32 @@ function block(level: number, price: number, date: string) {
       outline-offset: -1px;
       position: relative;
     "></div>`,
-    'text/html'
+    'text/html',
   ).body.children[0];
 
-  const tooltip = getTooltip(date, price);
+  if (tooltip) {
+    block.addEventListener('mouseover', () => {
+      block.append(tooltip);
+      tooltip.animate(
+        [
+          {
+            opacity: '0',
+            transform: 'translateX(-50%) scale(0.85)',
+          },
+          {
+            opacity: '1',
+            transform: 'translateX(-50%) scale(1)',
+          },
+        ],
+        {
+          duration: 200,
+          easing: 'ease-out',
+        },
+      );
+    });
 
-  block.addEventListener('mouseover', () => {
-    block.append(tooltip);
-    tooltip.animate(
-      [
-        {
-          opacity: '0',
-          transform: 'translateX(-50%) scale(0.85)',
-        },
-        {
-          opacity: '1',
-          transform: 'translateX(-50%) scale(1)',
-        },
-      ],
-      {
-        duration: 200,
-        easing: 'ease-out',
-      }
-    );
-  });
-  block.addEventListener('mouseleave', () => tooltip.remove());
+    block.addEventListener('mouseleave', () => tooltip.remove());
+  }
 
   return block;
 }
@@ -78,7 +80,8 @@ function drawBlocks(
   for (let i = 0; i < 365; i++) {
     const key = getYearMonthDateString(today);
     const { level = 0, price = 0 } = dateWithLevel[key] ?? {};
-    blocks.push(block(level, price, key));
+    const tooltip = getTooltip(key, price);
+    blocks.push(block(level, tooltip));
     today.setTime(today.getTime() - DAY);
   }
 
@@ -92,16 +95,10 @@ function drawBlocks(
       grid-auto-flow: column;
       grid-template-columns: repeat(auto-fit, 10px);
       gap: 3px;
-
-      --level-0: #ebedf0;
-      --level-1: #fff056;
-      --level-2: #ffc300;
-      --level-3: #ffa200;
-      --level-4: #ff8800;
     ">
     </div>
     `,
-    'text/html'
+    'text/html',
   ).body.children[0];
 
   blocks.forEach((b) => container.append(b));
@@ -113,7 +110,7 @@ export function heatmap(groupedChzInfos: StreamerSummary[]) {
     .flatMap(({ purchases }) => purchases)
     .reduce((map, history) => {
       const key = getYearMonthDateString(
-        new Date(history.purchaseDate.replace(' ', 'T') + '+09:00')
+        new Date(history.purchaseDate.replace(' ', 'T') + '+09:00'),
       );
       map[key] = (map[key] ?? 0) + history.payAmount;
 
@@ -139,9 +136,25 @@ export function heatmap(groupedChzInfos: StreamerSummary[]) {
     }
   }
 
-  const div = document.createElement('div');
-  div.style.marginTop = '16px ';
-  div.append(Heading(2, '치즈 히트맵'));
+  const div = parseHtml(`
+    <div style="
+    --level-0: #ebedf0;
+    --level-1: #fff056;
+    --level-2: #ffc300;
+    --level-3: #ffa200;
+    --level-4: #ff8800;">
+    </div>
+  `);
+  const heading = Heading(2, '치즈 히트맵');
+  heading.style.display = 'flex';
+  heading.style.alignItems = 'center';
+  heading.style.gap = '5px';
+  heading.append(block(0));
+  heading.append(block(1));
+  heading.append(block(2));
+  heading.append(block(3));
+  heading.append(block(4));
+  div.append(heading);
   div.append(drawBlocks(dateWithLevel));
 
   return div;
