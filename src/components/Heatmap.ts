@@ -21,16 +21,22 @@ function block(level: number, tooltip?: HTMLElement) {
 
   if (tooltip) {
     block.addEventListener('mouseover', () => {
-      block.append(tooltip);
+      const { left, width, top } = block.getBoundingClientRect();
+      tooltip.style.position = 'absolute';
+      tooltip.style.left = left + width / 2 + 'px';
+      tooltip.style.top = top + 'px';
+      const translate = 'translate(-50%, calc(-100% - 3px))';
+      tooltip.style.transform = translate;
+      document.body.append(tooltip);
       tooltip.animate(
         [
           {
             opacity: '0',
-            transform: 'translateX(-50%) scale(0.85)',
+            transform: translate + ' scale(0.85)',
           },
           {
             opacity: '1',
-            transform: 'translateX(-50%) scale(1)',
+            transform: translate + ' scale(1)',
           },
         ],
         {
@@ -54,10 +60,6 @@ function getTooltip(date: string, price: number) {
     price.toLocaleString() +
     ' 치즈 만큼 후원했어요';
 
-  tooltip.style.position = 'absolute';
-  tooltip.style.bottom = 'calc(100% + 3px)';
-  tooltip.style.left = '50%';
-  tooltip.style.transform = 'translateX(-50%)';
   tooltip.style.backgroundColor = '#24292f';
   tooltip.style.color = 'white';
   tooltip.style.fontSize = '12px';
@@ -109,17 +111,14 @@ function drawBlocks(
 export function heatmap(groupedChzInfos: StreamerSummary[]) {
   const dateWithPrice = groupedChzInfos
     .flatMap(({ purchases }) => purchases)
-    .reduce(
-      (map, history) => {
-        const key = getYearMonthDateString(
-          new Date(history.purchaseDate.replace(' ', 'T') + '+09:00'),
-        );
-        map[key] = (map[key] ?? 0) + history.payAmount;
+    .reduce((map, history) => {
+      const key = getYearMonthDateString(
+        new Date(history.purchaseDate.replace(' ', 'T') + '+09:00'),
+      );
+      map[key] = (map[key] ?? 0) + history.payAmount;
 
-        return map;
-      },
-      {} as Record<string, number>,
-    );
+      return map;
+    }, {} as Record<string, number>);
 
   const kmeans = new Kmeans({ k: 4, datas: Object.values(dateWithPrice) });
   kmeans.multipleFit(500);
