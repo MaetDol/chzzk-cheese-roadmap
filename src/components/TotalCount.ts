@@ -23,7 +23,7 @@ export function TotalCount(groupedChzInfos: StreamerSummary[]) {
       height: '58px',
       color: '#ffffffaa',
     }),
-    (countsByType[DonationType.CHAT] + 1000).toLocaleString(),
+    countsByType[DonationType.CHAT].toLocaleString(),
     {
       backgroundColor: '#ff8800',
     },
