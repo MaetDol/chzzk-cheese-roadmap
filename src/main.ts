@@ -1,4 +1,4 @@
-import { getChz, getPurchaseHistory } from '@/api';
+import { getChz, getPurchaseHistory, getUserHash } from '@/api';
 import { heatmap } from '@/components/Heatmap';
 import { Text } from '@/components/Text';
 import { PurchaseHistory, StreamerSummary } from '@/types';
@@ -16,8 +16,15 @@ function log(...args: unknown[]) {
 
 async function main() {
   log(`"치즈로드맵" 실행 중..`);
-  const isSameWithCache = await shouldUseCachedInfo();
+
+  const hash = await getUserHash();
   const cache = getCachedInfo();
+  if (cache && cache.hash !== hash) {
+    log(`다른 계정 확인됨. 정보 초기화 중...`);
+    localStorage.removeItem(CACHE_KEY);
+  }
+
+  const isSameWithCache = await shouldUseCachedInfo();
   if (isSameWithCache && cache) {
     appendResult(cache.info);
     return;
@@ -36,7 +43,7 @@ async function main() {
     );
     groupedChzInfos = mergeChzGroups(cachedInfo, groupedChzInfos);
   }
-  setCachedInfo(groupedChzInfos);
+  setCachedInfo(hash, groupedChzInfos);
   appendResult(groupedChzInfos);
 }
 
@@ -66,14 +73,16 @@ function mergeChzGroups(group1: StreamerSummary[], group2: StreamerSummary[]) {
 }
 
 type CacheType = {
+  hash: string;
   info: StreamerSummary[];
   lastChzDate: string;
 };
 
-async function setCachedInfo(groupedChzInfos: StreamerSummary[]) {
+async function setCachedInfo(hash: string, groupedChzInfos: StreamerSummary[]) {
   localStorage.setItem(
     CACHE_KEY,
     JSON.stringify({
+      hash,
       info: groupedChzInfos,
       lastChzDate: getLastCheeseDateFromGroup(groupedChzInfos),
     }),
