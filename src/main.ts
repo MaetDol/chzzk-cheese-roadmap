@@ -1,5 +1,6 @@
 import { getChz, getPurchaseHistory } from '@/api';
 import { heatmap } from '@/components/Heatmap';
+import { Text } from '@/components/Text';
 import { PurchaseHistory, StreamerSummary } from '@/types';
 import { delay } from '@/utils/delay';
 import { TotalCount } from './components/TotalCount';
@@ -172,7 +173,21 @@ function appendResult(groupedChzInfos: StreamerSummary[]) {
     const targetElem = document.querySelector(`[class^=header_container__]`);
     if (!targetElem) return;
 
-    container.append(resetButton);
+    const totalWrap = document.createElement('div');
+    totalWrap.style.display = 'flex';
+    totalWrap.style.gap = '16px';
+    totalWrap.style.marginBottom = '16px';
+    totalWrap.append(
+      Text(
+        `${groupedChzInfos
+          .reduce((total, { sum }) => sum + total, 0)
+          .toLocaleString()} 치즈`,
+        { size: '24px', useChzzkFont: true },
+      ),
+    );
+    totalWrap.append(resetButton);
+
+    container.append(totalWrap);
     container.append(div);
 
     const flex = document.createElement('div');
