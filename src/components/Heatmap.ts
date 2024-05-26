@@ -97,6 +97,7 @@ function drawBlocks(
       grid-auto-flow: column;
       grid-template-columns: repeat(auto-fit, 10px);
       gap: 3px;
+      padding-bottom: 8px;
       overflow-y: auto;
     ">
     </div>
