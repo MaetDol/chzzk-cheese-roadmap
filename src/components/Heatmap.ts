@@ -121,8 +121,11 @@ export function heatmap(groupedChzInfos: StreamerSummary[]) {
       return map;
     }, {} as Record<string, number>);
 
-  const kmeans = new Kmeans({ k: 4, datas: Object.values(dateWithPrice) });
-  kmeans.multipleFit(500);
+  const purchases = Object.values(dateWithPrice);
+  const kmeans = new Kmeans({ k: 4, datas: purchases });
+  if (purchases.length) {
+    kmeans.multipleFit(500);
+  }
 
   const dateWithLevel: Record<string, { price: number; level: number }> = {};
   if (kmeans.classifications) {
