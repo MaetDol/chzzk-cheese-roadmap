@@ -1,5 +1,5 @@
 import { parseHtml } from '@/utils/domParser';
-import { IconProps } from "./types";
+import { IconProps } from './types';
 
 export function VideoDonation({ color, height, width }: IconProps) {
   const icon = parseHtml(`

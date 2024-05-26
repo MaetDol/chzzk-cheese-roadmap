@@ -4,7 +4,7 @@ import { delay } from '@/utils/delay';
 export async function getChz(
   year: number,
   pg: number,
-  getAll: boolean = false
+  getAll: boolean = false,
 ): Promise<PurchaseHistory[]> {
   const { page, totalPages, data } = await getPurchaseHistory(pg, year);
   const hasMorePages = page + 1 < totalPages;
@@ -18,7 +18,7 @@ export async function getChz(
 
 export async function getPurchaseHistory(
   pg: number,
-  year: number
+  year: number,
 ): Promise<{
   page: number;
   size: number;
@@ -35,7 +35,7 @@ export async function getPurchaseHistory(
       },
       method: 'GET',
       credentials: 'include',
-    }
+    },
   );
   const json = await res.json();
   return json.content;

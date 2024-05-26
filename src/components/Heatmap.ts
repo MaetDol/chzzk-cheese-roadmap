@@ -109,14 +109,17 @@ function drawBlocks(
 export function heatmap(groupedChzInfos: StreamerSummary[]) {
   const dateWithPrice = groupedChzInfos
     .flatMap(({ purchases }) => purchases)
-    .reduce((map, history) => {
-      const key = getYearMonthDateString(
-        new Date(history.purchaseDate.replace(' ', 'T') + '+09:00'),
-      );
-      map[key] = (map[key] ?? 0) + history.payAmount;
+    .reduce(
+      (map, history) => {
+        const key = getYearMonthDateString(
+          new Date(history.purchaseDate.replace(' ', 'T') + '+09:00'),
+        );
+        map[key] = (map[key] ?? 0) + history.payAmount;
 
-      return map;
-    }, {} as Record<string, number>);
+        return map;
+      },
+      {} as Record<string, number>,
+    );
 
   const kmeans = new Kmeans({ k: 4, datas: Object.values(dateWithPrice) });
   kmeans.multipleFit(500);

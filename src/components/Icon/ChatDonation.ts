@@ -1,5 +1,5 @@
 import { parseHtml } from '@/utils/domParser';
-import { IconProps } from "./types";
+import { IconProps } from './types';
 
 export function ChatDonation({ color, height, width }: IconProps = {}) {
   const icon = parseHtml(
@@ -22,7 +22,7 @@ export function ChatDonation({ color, height, width }: IconProps = {}) {
         stroke="currentColor" 
         stroke-width="0.4"
       ></path>
-    </svg>`
+    </svg>`,
   ) as SVGAElement;
 
   if (width) icon.style.width = width;

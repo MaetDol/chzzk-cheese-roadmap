@@ -30,8 +30,8 @@ async function main() {
       `캐싱된 정보 확인, 캐싱된 마지막 치즈: ${JSON.stringify(
         lastChz,
         null,
-        4
-      )}`
+        4,
+      )}`,
     );
     groupedChzInfos = mergeChzGroups(cachedInfo, groupedChzInfos);
   }
@@ -58,7 +58,7 @@ function mergeChzGroups(group1: StreamerSummary[], group2: StreamerSummary[]) {
           ...summary,
         });
       }
-    })
+    }),
   );
 
   return newGroup;
@@ -75,7 +75,7 @@ async function setCachedInfo(groupedChzInfos: StreamerSummary[]) {
     JSON.stringify({
       info: groupedChzInfos,
       lastChzDate: getLastCheeseDateFromGroup(groupedChzInfos),
-    })
+    }),
   );
 }
 
@@ -114,7 +114,7 @@ function getLastCheeseDateFromGroup(group: StreamerSummary[]) {
 }
 
 function getLastCheeseFromGroup(
-  group: StreamerSummary[]
+  group: StreamerSummary[],
 ): PurchaseHistory | null {
   let lastChz: PurchaseHistory | null = null;
 
@@ -192,7 +192,7 @@ function appendResult(groupedChzInfos: StreamerSummary[]) {
 async function getChzsAfterDate(
   startYear: number,
   endYear: number,
-  targetDateString: string
+  targetDateString: string,
 ) {
   const chzs = [];
 
@@ -208,7 +208,7 @@ async function getChzsAfterDate(
       const cachedHistoryIndex = data.findIndex(
         ({ purchaseDate }) =>
           new Date(purchaseDate).getTime() <=
-          new Date(targetDateString).getTime()
+          new Date(targetDateString).getTime(),
       );
 
       if (cachedHistoryIndex !== -1) {
@@ -232,7 +232,7 @@ async function getGroupedAllChz(): Promise<StreamerSummary[]> {
   const cachedInfoDate = getCachedInfo()?.lastChzDate;
   if (cachedInfoDate) {
     chzs.push(
-      ...(await getChzsAfterDate(TODAY_YEAR, START_YEAR, cachedInfoDate))
+      ...(await getChzsAfterDate(TODAY_YEAR, START_YEAR, cachedInfoDate)),
     );
   } else {
     for (let year = TODAY_YEAR; year > START_YEAR; year--) {
