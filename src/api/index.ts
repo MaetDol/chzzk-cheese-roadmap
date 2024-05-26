@@ -40,3 +40,20 @@ export async function getPurchaseHistory(
   const json = await res.json();
   return json.content;
 }
+
+export async function getUserHash(): Promise<string> {
+  const res = await fetch(
+    `https://comm-api.game.naver.com/nng_main/v2/user/profile`,
+    {
+      headers: {
+        accept: 'application/json, text/plain, */*',
+        'accept-language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7,fr;q=0.6',
+      },
+      method: 'GET',
+      credentials: 'include',
+    },
+  );
+
+  const json = await res.json();
+  return json.content.userIdHash;
+}
