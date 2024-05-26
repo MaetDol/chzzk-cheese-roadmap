@@ -1,7 +1,9 @@
 import { getChz, getPurchaseHistory } from '@/api';
 import { heatmap } from '@/components/Heatmap';
+import { Text } from '@/components/Text';
 import { PurchaseHistory, StreamerSummary } from '@/types';
 import { delay } from '@/utils/delay';
+import { TotalCount } from './components/TotalCount';
 
 const CACHE_KEY = '_#Cheese_summary_info_cache';
 const LOG_PREFIX = '[CHZ-ROADMAP]';
@@ -29,8 +31,8 @@ async function main() {
       `캐싱된 정보 확인, 캐싱된 마지막 치즈: ${JSON.stringify(
         lastChz,
         null,
-        4
-      )}`
+        4,
+      )}`,
     );
     groupedChzInfos = mergeChzGroups(cachedInfo, groupedChzInfos);
   }
@@ -57,7 +59,7 @@ function mergeChzGroups(group1: StreamerSummary[], group2: StreamerSummary[]) {
           ...summary,
         });
       }
-    })
+    }),
   );
 
   return newGroup;
@@ -74,7 +76,7 @@ async function setCachedInfo(groupedChzInfos: StreamerSummary[]) {
     JSON.stringify({
       info: groupedChzInfos,
       lastChzDate: getLastCheeseDateFromGroup(groupedChzInfos),
-    })
+    }),
   );
 }
 
@@ -113,7 +115,7 @@ function getLastCheeseDateFromGroup(group: StreamerSummary[]) {
 }
 
 function getLastCheeseFromGroup(
-  group: StreamerSummary[]
+  group: StreamerSummary[],
 ): PurchaseHistory | null {
   let lastChz: PurchaseHistory | null = null;
 
@@ -171,10 +173,31 @@ function appendResult(groupedChzInfos: StreamerSummary[]) {
     const targetElem = document.querySelector(`[class^=header_container__]`);
     if (!targetElem) return;
 
-    container.append(resetButton);
+    const totalWrap = document.createElement('div');
+    totalWrap.style.display = 'flex';
+    totalWrap.style.gap = '16px';
+    totalWrap.style.marginBottom = '16px';
+    totalWrap.append(
+      Text(
+        `${groupedChzInfos
+          .reduce((total, { sum }) => sum + total, 0)
+          .toLocaleString()} 치즈`,
+        { size: '24px', useChzzkFont: true },
+      ),
+    );
+    totalWrap.append(resetButton);
+
+    container.append(totalWrap);
     container.append(div);
 
-    container.append(heatmap(groupedChzInfos));
+    const flex = document.createElement('div');
+    flex.style.display = 'flex';
+    flex.style.gap = '16px';
+    flex.style.marginTop = '16px';
+
+    flex.append(TotalCount(groupedChzInfos));
+    flex.append(heatmap(groupedChzInfos));
+    container.append(flex);
 
     targetElem.after(container);
     clearInterval(intervalId);
@@ -184,7 +207,7 @@ function appendResult(groupedChzInfos: StreamerSummary[]) {
 async function getChzsAfterDate(
   startYear: number,
   endYear: number,
-  targetDateString: string
+  targetDateString: string,
 ) {
   const chzs = [];
 
@@ -200,7 +223,7 @@ async function getChzsAfterDate(
       const cachedHistoryIndex = data.findIndex(
         ({ purchaseDate }) =>
           new Date(purchaseDate).getTime() <=
-          new Date(targetDateString).getTime()
+          new Date(targetDateString).getTime(),
       );
 
       if (cachedHistoryIndex !== -1) {
@@ -224,7 +247,7 @@ async function getGroupedAllChz(): Promise<StreamerSummary[]> {
   const cachedInfoDate = getCachedInfo()?.lastChzDate;
   if (cachedInfoDate) {
     chzs.push(
-      ...(await getChzsAfterDate(TODAY_YEAR, START_YEAR, cachedInfoDate))
+      ...(await getChzsAfterDate(TODAY_YEAR, START_YEAR, cachedInfoDate)),
     );
   } else {
     for (let year = TODAY_YEAR; year > START_YEAR; year--) {

@@ -7,7 +7,7 @@ const formatter = Intl.DateTimeFormat('ko-KR', {
 
 export function getYearMonthDateString(date: Date) {
   const parts = new Map(
-    formatter.formatToParts(date).map(({ type, value }) => [type, value])
+    formatter.formatToParts(date).map(({ type, value }) => [type, value]),
   );
 
   return `${parts.get('year')}-${parts.get('month')}-${parts.get('day')}`;
