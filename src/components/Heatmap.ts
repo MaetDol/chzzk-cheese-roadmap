@@ -71,7 +71,7 @@ function getTooltip(date: string, price: number) {
 }
 
 function drawBlocks(
-  dateWithLevel: Record<string, { price: number; level: number }>
+  dateWithLevel: Record<string, { price: number; level: number }>,
 ) {
   const blocks = [];
   const today = new Date();
@@ -95,6 +95,7 @@ function drawBlocks(
       grid-auto-flow: column;
       grid-template-columns: repeat(auto-fit, 10px);
       gap: 3px;
+      overflow-y: auto;
     ">
     </div>
     `,
@@ -138,11 +139,13 @@ export function heatmap(groupedChzInfos: StreamerSummary[]) {
 
   const div = parseHtml(`
     <div style="
-    --level-0: #ebedf0;
-    --level-1: #fff056;
-    --level-2: #ffc300;
-    --level-3: #ffa200;
-    --level-4: #ff8800;">
+      --level-0: #ebedf0;
+      --level-1: #fff056;
+      --level-2: #ffc300;
+      --level-3: #ffa200;
+      --level-4: #ff8800;
+      overflow-y: hidden;
+    ">
     </div>
   `);
   const heading = Heading(2, '치즈 히트맵');
