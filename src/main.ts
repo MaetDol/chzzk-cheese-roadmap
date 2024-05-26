@@ -2,6 +2,7 @@ import { getChz, getPurchaseHistory } from '@/api';
 import { heatmap } from '@/components/Heatmap';
 import { PurchaseHistory, StreamerSummary } from '@/types';
 import { delay } from '@/utils/delay';
+import { TotalCount } from './components/TotalCount';
 
 const CACHE_KEY = '_#Cheese_summary_info_cache';
 const LOG_PREFIX = '[CHZ-ROADMAP]';
@@ -174,7 +175,14 @@ function appendResult(groupedChzInfos: StreamerSummary[]) {
     container.append(resetButton);
     container.append(div);
 
-    container.append(heatmap(groupedChzInfos));
+    const flex = document.createElement('div');
+    flex.style.display = 'flex';
+    flex.style.gap = '16px';
+    flex.style.marginTop = '16px';
+
+    flex.append(TotalCount(groupedChzInfos));
+    flex.append(heatmap(groupedChzInfos));
+    container.append(flex);
 
     targetElem.after(container);
     clearInterval(intervalId);

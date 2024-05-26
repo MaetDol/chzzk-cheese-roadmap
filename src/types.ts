@@ -19,3 +19,9 @@ export type StreamerSummary = {
   sum: number;
   thumbnail: string;
 };
+
+export enum DonationType {
+  CHAT = 'CHAT',
+  VIDEO = 'VIDEO',
+  MISSION = 'MISSION',
+}
