@@ -4,7 +4,11 @@ import { StreamerSummary } from '@/types';
 import { getYearMonthDateString } from '@/utils/date-to-year-month-date';
 import { parseHtml } from '@/utils/domParser';
 
-function block(level: number, tooltip?: HTMLElement) {
+function block(
+  level: number,
+  tooltip?: HTMLElement,
+  tooltipWrapper?: HTMLElement,
+) {
   const parser = new DOMParser();
   const block = parser.parseFromString(
     `<div style="      
@@ -17,35 +21,12 @@ function block(level: number, tooltip?: HTMLElement) {
       position: relative;
     "></div>`,
     'text/html',
-  ).body.children[0];
+  ).body.children[0] as HTMLElement;
 
-  if (tooltip) {
-    block.addEventListener('mouseover', () => {
-      const { left, width, top } = block.getBoundingClientRect();
-      tooltip.style.position = 'absolute';
-      tooltip.style.left = left + width / 2 + 'px';
-      tooltip.style.top = top + 'px';
-      const translate = 'translate(-50%, calc(-100% - 3px))';
-      tooltip.style.transform = translate;
-      document.body.append(tooltip);
-      tooltip.animate(
-        [
-          {
-            opacity: '0',
-            transform: translate + ' scale(0.85)',
-          },
-          {
-            opacity: '1',
-            transform: translate + ' scale(1)',
-          },
-        ],
-        {
-          duration: 200,
-          easing: 'ease-out',
-        },
-      );
-    });
-
+  if (tooltip && tooltipWrapper) {
+    block.addEventListener('mouseover', () =>
+      showTooltip(block, tooltip, tooltipWrapper),
+    );
     block.addEventListener('mouseleave', () => tooltip.remove());
   }
 
@@ -74,6 +55,7 @@ function getTooltip(date: string, price: number) {
 
 function drawBlocks(
   dateWithLevel: Record<string, { price: number; level: number }>,
+  tooltipWrapper: HTMLElement,
 ) {
   const blocks = [];
   const today = new Date();
@@ -83,7 +65,7 @@ function drawBlocks(
     const key = getYearMonthDateString(today);
     const { level = 0, price = 0 } = dateWithLevel[key] ?? {};
     const tooltip = getTooltip(key, price);
-    blocks.push(block(level, tooltip));
+    blocks.push(block(level, tooltip, tooltipWrapper));
     today.setTime(today.getTime() - DAY);
   }
 
@@ -143,7 +125,11 @@ export function heatmap(groupedChzInfos: StreamerSummary[]) {
     }
   }
 
-  const div = parseHtml(`
+  const div = document.createElement('div');
+  div.style.minWidth = '0';
+  div.style.position = 'relative';
+
+  const scrollWrapper = parseHtml(`
     <div style="
       --level-0: #ebedf0;
       --level-1: #fff056;
@@ -163,8 +149,44 @@ export function heatmap(groupedChzInfos: StreamerSummary[]) {
   heading.append(block(2));
   heading.append(block(3));
   heading.append(block(4));
-  div.append(heading);
-  div.append(drawBlocks(dateWithLevel));
+  scrollWrapper.append(heading);
+  scrollWrapper.append(drawBlocks(dateWithLevel, div));
 
+  div.append(scrollWrapper);
   return div;
+}
+
+function showTooltip(
+  block: HTMLElement,
+  tooltip: HTMLElement,
+  appendTooltipOn: Element,
+) {
+  const top = block.offsetTop;
+  const left = block.offsetLeft;
+  const width = block.clientWidth;
+
+  tooltip.style.position = 'absolute';
+  tooltip.style.left = left + width / 2 + 'px';
+  tooltip.style.top = top + 'px';
+
+  const translate = 'translate(-50%, calc(-100% - 3px))';
+  tooltip.style.transform = translate;
+
+  appendTooltipOn.append(tooltip);
+  tooltip.animate(
+    [
+      {
+        opacity: '0',
+        transform: translate + ' scale(0.85)',
+      },
+      {
+        opacity: '1',
+        transform: translate + ' scale(1)',
+      },
+    ],
+    {
+      duration: 200,
+      easing: 'ease-out',
+    },
+  );
 }
