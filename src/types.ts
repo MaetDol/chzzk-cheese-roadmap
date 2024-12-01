@@ -3,7 +3,7 @@ export type PurchaseHistory = {
   channelImageUrl: string;
   channelName: string;
   donationText: string;
-  donationType: 'CHAT' | 'VIDEO';
+  donationType: DonationType;
   donationVideoType: null | string;
   donationVideoUrl: string;
   extras: unknown;
@@ -17,6 +17,7 @@ export type StreamerSummary = {
   name: string;
   purchases: PurchaseHistory[];
   sum: number;
+  totalDonation: number;
   thumbnail: string;
 };
 
@@ -24,4 +25,5 @@ export enum DonationType {
   CHAT = 'CHAT',
   VIDEO = 'VIDEO',
   MISSION = 'MISSION',
+  TTS = 'TTS',
 }

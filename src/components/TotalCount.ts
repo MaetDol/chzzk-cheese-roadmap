@@ -5,7 +5,7 @@ import { Text } from './Text';
 export function TotalCount(groupedChzInfos: StreamerSummary[]) {
   const countsByType = groupedChzInfos
     .flatMap(({ purchases }) => purchases)
-    .reduce(
+    .reduce<Record<DonationType, number>>(
       (groups, purchase) => {
         groups[purchase.donationType] += 1;
         return groups;
@@ -14,6 +14,7 @@ export function TotalCount(groupedChzInfos: StreamerSummary[]) {
         [DonationType.CHAT]: 0,
         [DonationType.MISSION]: 0,
         [DonationType.VIDEO]: 0,
+        [DonationType.TTS]: 0,
       },
     );
 
