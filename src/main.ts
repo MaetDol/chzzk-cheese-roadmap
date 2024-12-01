@@ -1,7 +1,7 @@
 import { getChz, getPurchaseHistory, getUserHash } from '@/api';
 import { heatmap } from '@/components/Heatmap';
 import { Text } from '@/components/Text';
-import { PurchaseHistory, StreamerSummary } from '@/types';
+import { DonationType, PurchaseHistory, StreamerSummary } from '@/types';
 import { delay } from '@/utils/delay';
 import { TotalCount } from './components/TotalCount';
 
@@ -54,6 +54,7 @@ function mergeChzGroups(group1: StreamerSummary[], group2: StreamerSummary[]) {
     group.forEach((summary) => {
       const mergedSummary = newGroup.find((s) => s.id === summary.id);
       if (mergedSummary) {
+        mergedSummary.totalDonation += summary.totalDonation;
         mergedSummary.sum += summary.sum;
         mergedSummary.thumbnail = summary.thumbnail;
         mergedSummary.name = summary.name;
@@ -152,9 +153,9 @@ function appendResult(groupedChzInfos: StreamerSummary[]) {
   div.style.alignItems = 'center';
 
   groupedChzInfos
-    .sort((s1, s2) => s2.sum - s1.sum)
-    .forEach(({ thumbnail, name, sum }) => {
-      div.append(newStreamer(thumbnail, name, sum.toLocaleString()));
+    .sort((s1, s2) => s2.totalDonation - s1.totalDonation)
+    .forEach(({ thumbnail, name, totalDonation }) => {
+      div.append(newStreamer(thumbnail, name, totalDonation.toLocaleString()));
     });
 
   const container = document.createElement('div');
@@ -272,6 +273,7 @@ async function getGroupedAllChz(): Promise<StreamerSummary[]> {
         id: chz.channelId,
         purchases: [],
         sum: 0,
+        totalDonation: 0,
         thumbnail: chz.channelImageUrl,
         name: chz.channelName,
       };
@@ -280,6 +282,9 @@ async function getGroupedAllChz(): Promise<StreamerSummary[]> {
 
     streamer.purchases.push(chz);
     streamer.sum += chz.payAmount;
+    if (chz.donationType !== DonationType.TTS) {
+      streamer.totalDonation += chz.payAmount;
+    }
 
     return map;
   }, []);
