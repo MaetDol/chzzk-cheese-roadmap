@@ -54,7 +54,9 @@ function mergeChzGroups(group1: StreamerSummary[], group2: StreamerSummary[]) {
     group.forEach((summary) => {
       const mergedSummary = newGroup.find((s) => s.id === summary.id);
       if (mergedSummary) {
-        mergedSummary.totalDonation += summary.totalDonation;
+        mergedSummary.totalDonation =
+          (mergedSummary.totalDonation ?? mergedSummary.sum) +
+          (summary.totalDonation ?? summary.sum);
         mergedSummary.sum += summary.sum;
         mergedSummary.thumbnail = summary.thumbnail;
         mergedSummary.name = summary.name;
@@ -65,6 +67,7 @@ function mergeChzGroups(group1: StreamerSummary[], group2: StreamerSummary[]) {
       } else {
         newGroup.push({
           ...summary,
+          totalDonation: summary.totalDonation ?? summary.sum,
         });
       }
     }),
